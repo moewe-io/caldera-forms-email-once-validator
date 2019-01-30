@@ -8,7 +8,7 @@
 */
 
 add_filter('caldera_forms_get_form_processors', 'caldera_forms_email_once_validator_processor');
-function  caldera_forms_email_once_validator_processor($processors)
+function caldera_forms_email_once_validator_processor($processors)
 {
     $processors['caldera_forms_email_once_validator'] = array(
         'name' => __('E-Mail Once Validator', 'caldera-forms-email-once-validator'),
@@ -34,20 +34,33 @@ function caldera_forms_email_once_validator_pre_processor($config, $form)
 
     if (!$cf_email_once_field_id) {
         return array(
-            'note' => __('Es wurde keine Feld ID für den konfigurierten E-Mail Slug gefunden.','caldera-forms-email-once-validator'),
+            'note' => __('Es wurde keine Feld ID für den konfigurierten E-Mail Slug gefunden.', 'caldera-forms-email-once-validator'),
             'type' => 'error'
         );
     }
 
     $raw_data = Caldera_Forms::get_submission_data($form);
 
-    $email_once_field_value = $raw_data[$cf_email_once_field_id];
+    $email_count = $wpdb->get_var("
+        SELECT 
+          COUNT(*) 
+        FROM 
+            {$wpdb->prefix}cf_form_entry_values AS cffev
+        INNER JOIN
+            {$wpdb->prefix}cf_form_entries AS cffe
+        ON
+            cffe.id = cffev.entry_id
+        WHERE 
+            cffev.field_id = '{$cf_email_once_field_id}' 
+        AND 
+            cffev.value = '" . esc_sql($raw_data[$cf_email_once_field_id]) . "'
+        AND 
+            cffe.form_id = '{$form['ID']}'
+    ");
 
-    $email_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}cf_form_entry_values WHERE field_id='{$cf_email_once_field_id}' AND value = '" . esc_sql($email_once_field_value) . "'" );
-
-    if($email_count > 0) {
+    if ($email_count > 0) {
         return array(
-            'note' => __('Die eingebene E-Mail-Adresse ist bereits vorhanden.','caldera-forms-email-once-validator'),
+            'note' => __('Die eingebene E-Mail-Adresse ist bereits vorhanden.', 'caldera-forms-email-once-validator'),
             'type' => 'error'
         );
     }
