@@ -25,7 +25,7 @@ function caldera_forms_unique_fields_validator_pre_processor($config, $form)
 
     $cf_unique_fields_validator_slugs = Caldera_Forms::do_magic_tags($config['cf_unique_fields_validator_slugs']);
 	
-	$cf_unique_fields_validator_slugs = array_map('trim',split(",", $cf_unique_fields_validator_slugs));
+	$cf_unique_fields_validator_slugs = array_map('trim',explode(",", $cf_unique_fields_validator_slugs));
 	$cf_unique_fields_validator_slug_ids = array();
 	
     foreach ($form['fields'] as $field) {
@@ -42,22 +42,13 @@ function caldera_forms_unique_fields_validator_pre_processor($config, $form)
 			SELECT 
 			  COUNT(*) 
 			FROM 
-				{$wpdb->prefix}cf_form_entry_values AS cffev
-			INNER JOIN
 				{$wpdb->prefix}cf_form_entries AS cffe
-			ON
-				cffe.id = cffev.entry_id
 			WHERE 
 				cffe.form_id = '{$form['ID']}'
 		";
 		
 		foreach( $cf_unique_fields_validator_slug_ids as $cf_unique_fields_validator_slug_id ) {
-			$unique_count_sql .= " 
-			AND (
-					cffev.field_id = '{$cf_unique_fields_validator_slug_id}' 
-				AND 
-					cffev.value = '" . esc_sql($raw_data[$cf_unique_fields_validator_slug_id]) . "'
-			) ";
+			$unique_count_sql .= " AND EXISTS (SELECT 1 FROM {$wpdb->prefix}cf_form_entry_values AS cffev WHERE cffev.entry_id = cffe.id  AND cffev.field_id = '{$cf_unique_fields_validator_slug_id}' AND cffev.value = '" . esc_sql($raw_data[$cf_unique_fields_validator_slug_id]) . "') ";
 		}
 			
 		$unique_count = $wpdb->get_var($unique_count_sql);
