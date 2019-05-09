@@ -1,5 +1,5 @@
 # Description
-Caldera Forms processors which ensures that specific field values can only be submitted once per form. 
+Caldera Forms processor which ensures that specific field values can only be submitted once per form. 
 Furthermore all given field slugs define a unique constraint.
 
 # Example
